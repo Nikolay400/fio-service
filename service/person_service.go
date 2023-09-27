@@ -21,11 +21,33 @@ func NewPersonService(repo iface.PersonRepo, redisClient iface.Icacher, logger i
 }
 
 func (ps *PersonService) GetPeopleByFilters(filters *model.Filters) ([]*model.Person, error) {
-	users, err := ps.repo.GetPeopleByFilters(filters)
-	if err != nil {
-		return nil, err
+	var people []*model.Person
+	redisKey := filters.GetKeyForRedis()
+	peopleStr, redisErr := ps.redisClient.Get(redisKey)
+	if redisErr == redis.Nil {
+		people, err := ps.repo.GetPeopleByFilters(filters)
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, jsonErr := json.Marshal(people)
+		if jsonErr != nil {
+			return nil, jsonErr
+		}
+		err = ps.redisClient.Set(redisKey, jsonStr, time.Hour*24)
+		if err != nil {
+			return nil, err
+		}
+		ps.logger.Info("People were taken from DB and saved in cache.")
+		return people, nil
+	} else if redisErr != nil {
+		return nil, redisErr
+	} else {
+		err := json.Unmarshal([]byte(peopleStr), &people)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return users, err
+	return people, nil
 }
 
 func (ps *PersonService) GetPersonById(id int) (*model.Person, error) {

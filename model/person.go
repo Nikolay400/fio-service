@@ -1,8 +1,12 @@
 package model
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 )
@@ -176,4 +180,18 @@ func (nr *nationalizeResponce) GetCountry() string {
 
 func (person *Person) MarshalBinary() ([]byte, error) {
 	return json.Marshal(person)
+}
+
+func (f *Filters) GetKeyForRedis() string {
+	str := fmt.Sprintf("AgeFrom=%d,AgeTo=%d,Gender=%s,Country=%s,Search=%s,PageNum=%d,OnPage=%d", f.AgeFrom, f.AgeTo, f.Gender, f.Country, f.Search, f.PageNum, f.OnPage)
+	return createMd5Hash(str)
+}
+
+func createMd5Hash(text string) string {
+	hasher := md5.New()
+	_, err := io.WriteString(hasher, text)
+	if err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(hasher.Sum(nil))
 }
