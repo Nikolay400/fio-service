@@ -55,10 +55,14 @@ func TestGetPeopleByFilters(t *testing.T) {
 		exp         *Expected
 	}{
 		{
-			name: "test with successful getting people",
+			name: "test with successful getting people from db",
 			prepareMock: func(m *mocks, filters *model.Filters) {
+				cacheKey := filters.GetKeyForRedis()
+				jsonPeople, _ := json.Marshal(people)
 				gomock.InOrder(
-					m.repo.EXPECT().GetPeopleByFilters(filters).Return(people, nil).Times(1),
+					m.cacher.EXPECT().Get(cacheKey).Return("", redis.Nil),
+					m.repo.EXPECT().GetPeopleByFilters(filters).Return(people, nil),
+					m.cacher.EXPECT().Set(cacheKey, jsonPeople, time.Hour*24).Return(nil),
 				)
 			},
 			arg: &model.Filters{},
@@ -68,11 +72,46 @@ func TestGetPeopleByFilters(t *testing.T) {
 			},
 		},
 		{
-			name: "test with iternal error",
+			name: "test with successful getting people from cache",
+			prepareMock: func(m *mocks, filters *model.Filters) {
+				cacheKey := filters.GetKeyForRedis()
+				jsonPeople, _ := json.Marshal(people)
+				gomock.InOrder(
+					m.cacher.EXPECT().Get(cacheKey).Return(string(jsonPeople), nil),
+					m.repo.EXPECT().GetPeopleByFilters(gomock.Any()).Times(0),
+				)
+			},
+			arg: &model.Filters{},
+			exp: &Expected{
+				people: people,
+				isErr:  false,
+			},
+		},
+		{
+			name: "test with internal error from cache",
 			prepareMock: func(m *mocks, filters *model.Filters) {
 				var err error = errors.New("INTERNAL ERROR")
+				cacheKey := filters.GetKeyForRedis()
 				gomock.InOrder(
-					m.repo.EXPECT().GetPeopleByFilters(filters).Return(nil, err).Times(1),
+					m.cacher.EXPECT().Get(cacheKey).Return("", err),
+					m.repo.EXPECT().GetPeopleByFilters(gomock.Any()).Times(0),
+				)
+			},
+			arg: &model.Filters{},
+			exp: &Expected{
+				people: nil,
+				isErr:  true,
+			},
+		},
+		{
+			name: "test with internal error from db",
+			prepareMock: func(m *mocks, filters *model.Filters) {
+				var err error = errors.New("INTERNAL ERROR")
+				cacheKey := filters.GetKeyForRedis()
+				gomock.InOrder(
+					m.cacher.EXPECT().Get(cacheKey).Return("", redis.Nil),
+					m.repo.EXPECT().GetPeopleByFilters(filters).Return(nil, err),
+					m.cacher.EXPECT().Set(gomock.Any(), gomock.Any(), gomock.Any()).Times(0),
 				)
 			},
 			arg: &model.Filters{},
