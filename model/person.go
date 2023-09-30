@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fio-service/env"
 	"fmt"
 	"io"
 	"net/http"
@@ -58,7 +59,7 @@ type countryId struct {
 }
 
 func (person *Person) GetAgeGenderCountry() error {
-	resp, err := http.Get("https://api.agify.io/?name=" + person.Name)
+	resp, err := http.Get(env.GetAgifyUrl() + person.Name)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (person *Person) GetAgeGenderCountry() error {
 		return err
 	}
 
-	resp, err = http.Get("https://api.genderize.io/?name=" + person.Name)
+	resp, err = http.Get(env.GetGenderizeUrl() + person.Name)
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func (person *Person) GetAgeGenderCountry() error {
 		return err
 	}
 
-	resp, err = http.Get("https://api.nationalize.io/?name=" + person.Name)
+	resp, err = http.Get(env.GetNationalizeUrl() + person.Name)
 	if err != nil {
 		return err
 	}

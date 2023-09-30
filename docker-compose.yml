@@ -19,26 +19,6 @@ services:
     networks:
       - fio-service-app
 
-  migrate:
-    image: migrate/migrate:v4.15.2
-    volumes:
-      - ./migrations:/migrations
-    entrypoint:
-      [
-        "migrate",
-        "-path",
-        "/migrations",
-        "-database",
-        "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable",
-      ]
-    command: ["up"]
-    depends_on:
-      postgresql:
-        condition: service_healthy
-    restart: on-failure
-    networks:
-      - fio-service-app
-
   redis:
     image: 'bitnami/redis:latest'
     environment:

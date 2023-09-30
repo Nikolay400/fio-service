@@ -26,3 +26,15 @@ func GetKafkaProducerUrl() string {
 func GetRedisUrl() string {
 	return os.Getenv("REDIS_URL")
 }
+
+func GetAgifyUrl() string {
+	return os.Getenv("AGIFY_URL")
+}
+
+func GetGenderizeUrl() string {
+	return os.Getenv("GENDERIZE_URL")
+}
+
+func GetNationalizeUrl() string {
+	return os.Getenv("NATIONALIZE_URL")
+}

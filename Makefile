@@ -18,6 +18,9 @@ app-up:
 		-e REDIS_URL=${REDIS_URL}\
 		-e KAFKA_CONSUMER_URL=${KAFKA_CONSUMER_URL}\
 		-e KAFKA_PRODUCER_URL=${KAFKA_PRODUCER_URL}\
+		-e NATIONALIZE_URL=${NATIONALIZE_URL}\
+		-e AGIFY_URL=${AGIFY_URL}\
+		-e GENDERIZE_URL=${GENDERIZE_URL}\
 		--name app-container\
 		app-image
 
@@ -25,12 +28,12 @@ app-up:
 
 ## Run migrations UP
 migrate-up:
-	docker compose run --rm migrate up
+	migrate -path ./migrations -database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable" -verbose up
 
 ## Run migrations DOWN
 migrate-down:
-	docker compose run --rm migrate down 1
+	migrate -path ./migrations -database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable" -verbose down 1
 
 ## Create a DB migration files e.g `make migrate-create name=migration-name`
 migrate-create:
-	docker compose run --rm migrate create -ext sql -dir /migrations -seq $(name)
+	migrate create -ext sql  -dir ./migrations -seq $(name)
